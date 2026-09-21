@@ -26,6 +26,23 @@ button{width:100%;border:0;border-radius:11px;padding:13px 16px;font-size:16px;f
 <body>
 <div class="app">
 <header><h1>REUNI BOSA 2001</h1><p>QR Scanner — Check-in & Pengambilan Kaos</p></header>
+<button
+  onclick="bukaScanner()"
+  style="
+    width:100%;
+    padding:14px;
+    margin:10px 0;
+    border:0;
+    border-radius:10px;
+    background:#16a34a;
+    color:white;
+    font-size:17px;
+    font-weight:bold;
+    cursor:pointer;
+  "
+>
+  📷 SCAN QR PESERTA
+</button>
 <main>
 <div class="card">
 <div id="status" class="status">Tekan <b>Mulai Scanner</b>, lalu arahkan kamera ke QR peserta.</div>
@@ -115,6 +132,174 @@ function sendToParent(){
  }
 }
 document.getElementById("manualId").addEventListener("keydown",e=>{if(e.key==="Enter")useManualId()});
+
+ // ======================================================
+// TERIMA HASIL SCAN QR DARI WEB SCANNER
+// ======================================================
+
+window.addEventListener('message', function(event) {
+
+  // Hanya menerima pesan dari Web Scanner BOSA
+  if (!event.data) {
+    return;
+  }
+
+  if (event.data.type !== 'BOSA_QR_SCAN') {
+    return;
+  }
+
+  const idPeserta = String(event.data.id || '')
+    .trim()
+    .toUpperCase();
+
+  // Validasi format ID
+  if (!/^BOSA-\d{4,}$/.test(idPeserta)) {
+
+    alert('QR tidak valid: ' + idPeserta);
+
+    return;
+  }
+
+  console.log(
+    'QR diterima dari scanner:',
+    idPeserta
+  );
+
+  // Cari peserta menggunakan fungsi Apps Script
+  google.script.run
+    .withSuccessHandler(function(data) {
+
+      if (!data) {
+
+        alert(
+          'Peserta dengan ID ' +
+          idPeserta +
+          ' tidak ditemukan.'
+        );
+
+        return;
+      }
+
+      // Jika halaman kita sudah memiliki fungsi
+      // tampilkanPeserta(), gunakan fungsi tersebut.
+      if (typeof tampilkanPeserta === 'function') {
+
+        tampilkanPeserta(data);
+
+      } else {
+
+        console.log(
+          'Data peserta diterima:',
+          data
+        );
+
+        alert(
+          'QR berhasil: ' +
+          idPeserta +
+          '\n\n' +
+          'Data peserta berhasil ditemukan.'
+        );
+
+      }
+
+    })
+    .withFailureHandler(function(error) {
+
+      console.error(
+        'Gagal mencari peserta:',
+        error
+      );
+
+      alert(
+        'Terjadi kesalahan saat mencari peserta:\n' +
+        error.message
+      );
+
+    })
+    .cariPeserta(idPeserta);
+
+});
+ function bukaScanner() {
+
+  const scannerUrl =
+    'https://poggy-sudo.github.io/bosa-2001-scanner/';
+
+  window.open(
+    scannerUrl,
+    'BOSA_QR_SCANNER',
+    'width=500,height=800'
+  );
+
+}
+
+// ======================================================
+// TERIMA HASIL SCAN QR DARI WEB SCANNER
+// ======================================================
+
+window.addEventListener('message', function(event) {
+
+  if (!event.data) {
+    return;
+  }
+
+  if (event.data.type !== 'BOSA_QR_SCAN') {
+    return;
+  }
+
+  const idPeserta = String(event.data.id || '')
+    .trim()
+    .toUpperCase();
+
+  if (!/^BOSA-\d{4,}$/.test(idPeserta)) {
+    alert('QR tidak valid: ' + idPeserta);
+    return;
+  }
+
+  console.log('QR diterima:', idPeserta);
+
+  google.script.run
+    .withSuccessHandler(function(data) {
+
+      if (!data) {
+        alert(
+          'Peserta dengan ID ' +
+          idPeserta +
+          ' tidak ditemukan.'
+        );
+        return;
+      }
+
+      console.log('Data peserta:', data);
+
+      if (typeof tampilkanPeserta === 'function') {
+
+        tampilkanPeserta(data);
+
+      } else {
+
+        alert(
+          'QR berhasil dibaca: ' +
+          idPeserta +
+          '\nData peserta berhasil ditemukan.'
+        );
+
+      }
+
+    })
+    .withFailureHandler(function(error) {
+
+      console.error(error);
+
+      alert(
+        'Gagal mengambil data peserta:\n' +
+        error.message
+      );
+
+    })
+    .cariPeserta(idPeserta);
+
+});
+ 
 </script>
 </body>
 </html>
