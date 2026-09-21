@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0f172a">
+<title>QR Scanner - Reuni BOSA 2001</title>
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f1f5f9;color:#0f172a;font-family:Arial,sans-serif}
+.app{max-width:560px;margin:auto;min-height:100vh;background:#fff}
+header{background:#0f172a;color:#fff;text-align:center;padding:22px 18px}
+h1{font-size:23px;margin:0}header p{margin:7px 0 0;font-size:14px;opacity:.8}
+main{padding:18px}.card{border:1px solid #e2e8f0;border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:0 3px 12px #0f172a0f}
+#reader{width:100%;overflow:hidden;border-radius:14px;background:#000}
+.status{padding:12px 14px;border-radius:10px;background:#f8fafc;color:#475569;font-size:14px;margin-bottom:14px;line-height:1.45}
+.status.ok{background:#ecfdf5;color:#166534}.status.error{background:#fef2f2;color:#991b1b}
+button{width:100%;border:0;border-radius:11px;padding:13px 16px;font-size:16px;font-weight:700;cursor:pointer;margin-top:9px}
+.primary{background:#0f172a;color:#fff}.secondary{background:#e2e8f0;color:#0f172a}.success{background:#16a34a;color:#fff}
+.result{text-align:center;display:none}.result.show{display:block}.label{color:#64748b;font-size:13px}.rid{font-size:30px;font-weight:700;margin:6px 0 12px}
+.manual{display:flex;gap:8px}.manual input{flex:1;min-width:0;padding:13px 12px;border:1px solid #cbd5e1;border-radius:10px;font-size:16px;text-transform:uppercase}
+.manual button{width:auto;margin:0}.hint{text-align:center;color:#64748b;font-size:13px;line-height:1.5}
+.footer{text-align:center;color:#94a3b8;font-size:12px;padding:5px 18px 25px}
+</style>
+</head>
+<body>
+<div class="app">
+<header><h1>REUNI BOSA 2001</h1><p>QR Scanner — Check-in & Pengambilan Kaos</p></header>
+<main>
+<div class="card">
+<div id="status" class="status">Tekan <b>Mulai Scanner</b>, lalu arahkan kamera ke QR peserta.</div>
+<div id="reader"></div>
+<p class="hint">Gunakan halaman ini melalui <b>HTTPS</b> dan izinkan akses kamera.</p>
+<button id="startBtn" class="primary" onclick="startScanner()">📷 Mulai Scanner</button>
+<button id="stopBtn" class="secondary" onclick="stopScanner()" style="display:none">⏹ Hentikan Scanner</button>
+</div>
+
+<div id="resultCard" class="card result">
+<div class="label">QR TERBACA</div>
+<div id="resultId" class="rid">-</div>
+<button class="success" onclick="sendToParent()">✓ Kirim ke Halaman Check-in</button>
+<button class="secondary" onclick="scanAgain()">🔄 Scan Lagi</button>
+</div>
+
+<div class="card">
+<b>Input ID Manual</b>
+<div class="manual" style="margin-top:10px">
+<input id="manualId" placeholder="BOSA-0001" autocomplete="off">
+<button class="primary" onclick="useManualId()">OK</button>
+</div>
+<p class="hint" style="text-align:left">Cadangan jika QR sulit terbaca.</p>
+</div>
+</main>
+<div class="footer">Web Scanner BOSA 2001 — Versi 1</div>
+</div>
+
+<script>
+let scanner=null,currentId="",scanning=false;
+function status(msg,type=""){let e=document.getElementById("status");e.className="status "+type;e.innerHTML=msg}
+function norm(v){return String(v||"").trim().toUpperCase()}
+function esc(v){return String(v).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;")}
+
+async function startScanner(){
+ if(scanning)return;
+ try{
+  status("Meminta akses kamera...");
+  scanner=new Html5Qrcode("reader");
+  await scanner.start(
+   {facingMode:"environment"},
+   {fps:10,qrbox:(w,h)=>{let s=Math.floor(Math.min(w,h)*.70);return {width:s,height:s}},aspectRatio:1},
+   onSuccess,()=>{}
+  );
+  scanning=true;
+  document.getElementById("startBtn").style.display="none";
+  document.getElementById("stopBtn").style.display="block";
+  status("Kamera aktif. Arahkan QR peserta ke kotak scanner.","ok");
+ }catch(e){
+  console.error(e);
+  status("Kamera tidak dapat digunakan. Pastikan halaman dibuka melalui HTTPS dan izin kamera diberikan.<br><small>"+esc(e.message||e)+"</small>","error");
+ }
+}
+async function stopScanner(){
+ if(!scanner||!scanning)return;
+ try{await scanner.stop();await scanner.clear()}catch(e){}
+ scanning=false;
+ document.getElementById("startBtn").style.display="block";
+ document.getElementById("stopBtn").style.display="none";
+}
+function onSuccess(text){
+ let id=norm(text);
+ if(!/^BOSA-\d{4,}$/.test(id)){
+  status("QR terbaca, tetapi format ID tidak valid.<br>Hasil: <b>"+esc(id)+"</b>","error");return;
+ }
+ currentId=id;
+ document.getElementById("resultId").textContent=id;
+ document.getElementById("resultCard").classList.add("show");
+ status("QR berhasil dibaca: <b>"+esc(id)+"</b>","ok");
+ stopScanner();
+}
+function scanAgain(){currentId="";document.getElementById("resultCard").classList.remove("show");startScanner()}
+function useManualId(){
+ let id=norm(document.getElementById("manualId").value);
+ if(!/^BOSA-\d{4,}$/.test(id)){status("Format ID tidak valid. Contoh: <b>BOSA-0001</b>","error");return}
+ currentId=id;document.getElementById("resultId").textContent=id;document.getElementById("resultCard").classList.add("show");
+ status("ID manual siap dikirim: <b>"+esc(id)+"</b>","ok");
+}
+function sendToParent(){
+ if(!currentId)return;
+ if(window.opener&&!window.opener.closed){
+  window.opener.postMessage({type:"BOSA_QR_SCAN",id:currentId},"*");
+  status("ID <b>"+esc(currentId)+"</b> sudah dikirim ke halaman Check-in. Silakan kembali ke halaman tersebut.","ok");
+ }else{
+  if(navigator.clipboard)navigator.clipboard.writeText(currentId).catch(()=>{});
+  status("Scanner tidak dibuka dari halaman Check-in. ID <b>"+esc(currentId)+"</b> siap digunakan.","ok");
+ }
+}
+document.getElementById("manualId").addEventListener("keydown",e=>{if(e.key==="Enter")useManualId()});
+</script>
+</body>
+</html>
