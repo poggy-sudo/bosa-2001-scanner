@@ -122,14 +122,90 @@ function useManualId(){
  status("ID manual siap dikirim: <b>"+esc(id)+"</b>","ok");
 }
 function sendToParent(){
- if(!currentId)return;
- if(window.opener&&!window.opener.closed){
-  window.opener.postMessage({type:"BOSA_QR_SCAN",id:currentId},"*");
-  status("ID <b>"+esc(currentId)+"</b> sudah dikirim ke halaman Check-in. Silakan kembali ke halaman tersebut.","ok");
- }else{
-  if(navigator.clipboard)navigator.clipboard.writeText(currentId).catch(()=>{});
-  status("Scanner tidak dibuka dari halaman Check-in. ID <b>"+esc(currentId)+"</b> siap digunakan.","ok");
- }
+
+  if (!currentId) {
+    return;
+  }
+
+  // Ambil alamat halaman Check-in untuk kembali
+  const params = new URLSearchParams(
+    window.location.search
+  );
+
+  const returnUrl =
+    params.get('return');
+
+  // ==========================================
+  // MODE BARU:
+  // Scanner dibuka pada TAB yang sama
+  // ==========================================
+
+  if (returnUrl) {
+
+    let targetUrl = returnUrl;
+
+    // Tambahkan ID hasil scan
+    const separator =
+      targetUrl.includes('?')
+        ? '&'
+        : '?';
+
+    targetUrl =
+      targetUrl +
+      separator +
+      'scanId=' +
+      encodeURIComponent(currentId);
+
+    window.location.href = targetUrl;
+
+    return;
+  }
+
+
+  // ==========================================
+  // MODE LAMA:
+  // Scanner dibuka sebagai tab/window baru
+  // ==========================================
+
+  if (
+    window.opener &&
+    !window.opener.closed
+  ) {
+
+    window.opener.postMessage(
+      {
+        type: 'BOSA_QR_SCAN',
+        id: currentId
+      },
+      '*'
+    );
+
+    status(
+      'ID <b>' +
+      esc(currentId) +
+      '</b> sudah dikirim ke halaman Check-in.',
+      'ok'
+    );
+
+  } else {
+
+    if (navigator.clipboard) {
+
+      navigator.clipboard
+        .writeText(currentId)
+        .catch(() => {});
+
+    }
+
+    status(
+      'ID <b>' +
+      esc(currentId) +
+      '</b> siap digunakan.',
+      'ok'
+    );
+
+  }
+
 }
 document.getElementById("manualId").addEventListener("keydown",e=>{if(e.key==="Enter")useManualId()});
 
