@@ -122,44 +122,15 @@ function useManualId(){
  status("ID manual siap dikirim: <b>"+esc(id)+"</b>","ok");
 }
 function sendToParent(){
-
-  if(!currentId)return;
-
-  if(window.opener&&!window.opener.closed){
-
-    window.opener.postMessage(
-      {
-        type:"BOSA_QR_SCAN",
-        id:currentId
-      },
-      "*"
-    );
-
-    status(
-      "ID <b>"+esc(currentId)+
-      "</b> sudah dikirim ke halaman Check-in. Silakan kembali ke halaman tersebut.",
-      "ok"
-    );
-
-  }else{
-
-    if(navigator.clipboard)
-      navigator.clipboard
-        .writeText(currentId)
-        .catch(()=>{});
-
-    status(
-      "Scanner tidak dibuka dari halaman Check-in. ID <b>"+
-      esc(currentId)+
-      "</b> siap digunakan.",
-      "ok"
-    );
-
-  }
-
+ if(!currentId)return;
+ if(window.opener&&!window.opener.closed){
+  window.opener.postMessage({type:"BOSA_QR_SCAN",id:currentId},"*");
+  status("ID <b>"+esc(currentId)+"</b> sudah dikirim ke halaman Check-in. Silakan kembali ke halaman tersebut.","ok");
+ }else{
+  if(navigator.clipboard)navigator.clipboard.writeText(currentId).catch(()=>{});
+  status("Scanner tidak dibuka dari halaman Check-in. ID <b>"+esc(currentId)+"</b> siap digunakan.","ok");
+ }
 }
-
-
 document.getElementById("manualId").addEventListener("keydown",e=>{if(e.key==="Enter")useManualId()});
 
  // ======================================================
