@@ -160,51 +160,6 @@ function sendToParent(){
 }
 
 
-  // ==========================================
-  // MODE LAMA:
-  // Scanner dibuka sebagai tab/window baru
-  // ==========================================
-
-  if (
-    window.opener &&
-    !window.opener.closed
-  ) {
-
-    window.opener.postMessage(
-      {
-        type: 'BOSA_QR_SCAN',
-        id: currentId
-      },
-      '*'
-    );
-
-    status(
-      'ID <b>' +
-      esc(currentId) +
-      '</b> sudah dikirim ke halaman Check-in.',
-      'ok'
-    );
-
-  } else {
-
-    if (navigator.clipboard) {
-
-      navigator.clipboard
-        .writeText(currentId)
-        .catch(() => {});
-
-    }
-
-    status(
-      'ID <b>' +
-      esc(currentId) +
-      '</b> siap digunakan.',
-      'ok'
-    );
-
-  }
-
-}
 document.getElementById("manualId").addEventListener("keydown",e=>{if(e.key==="Enter")useManualId()});
 
  // ======================================================
