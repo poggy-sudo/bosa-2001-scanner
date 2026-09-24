@@ -130,7 +130,7 @@ function sendToParent(){
   if(returnUrl){
     const separator = returnUrl.includes("?") ? "&" : "?";
     window.location.href =
-      returnUrl + separator + "scan=" + encodeURIComponent(currentId);
+      returnUrl + separator + "qrid=" + encodeURIComponent(currentId);
   }else{
     status(
       "Halaman Check-in tidak ditemukan. ID <b>" +
